@@ -231,10 +231,13 @@ BINOP ::= eq | > | or | and | plus | minus | mult | div
 
 ### Code Style
 
-- Follow PEP 8 for Python code
-- Use type hints where appropriate
+- Indentation: Use 4 spaces per indentation level | 1 Tab
 - Include comprehensive docstrings
 - Write unit tests for all new features
+- Functions/variables: snake_case (e.g., my_function, token_type)
+- Classes: PascalCase (e.g., SPLLexer, TokenType)
+- Constants: UPPER_CASE (e.g., MAX_STRING_LENGTH)
+- Private methods: Start with underscore (e.g., _parse_token)
 
 ### Git Workflow
 
@@ -245,8 +248,8 @@ BINOP ::= eq | > | or | and | plus | minus | mult | div
 
 ### Team Responsibilities
 
-- **Lexer**: ✅ Complete (Token class, types, implementation, tests)
-- **Parser**: 🚧 In progress
+- **Lexer**: 🟨 In review (Token class, types, implementation, tests)
+- **Parser**: 🚧 Planned
 - **AST**: 🚧 Planned
 - **Code Generation**: 🚧 Planned
 
