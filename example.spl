@@ -1,0 +1,66 @@
+// Example SPL Program: Calculator
+// This demonstrates various SPL language features
+
+glob {
+    result
+    a
+    b
+}
+
+proc {
+    initialize() {
+        local { temp }
+        result = 0;
+        a = 0;
+        b = 0
+    }
+}
+
+func {
+    add(x y) {
+        local { sum }
+        sum = x plus y;
+        return sum
+    }
+    
+    multiply(x y) {
+        local { product temp }
+        product = 0;
+        temp = y;
+        while (temp > 0) {
+            product = product plus x;
+            temp = temp minus 1
+        };
+        return product
+    }
+}
+
+main {
+    var { num1 num2 choice }
+    
+    // Initialize variables
+    initialize();
+    
+    // Get some input values
+    num1 = 10;
+    num2 = 5;
+    choice = 1;
+    
+    // Perform calculations based on choice
+    if (choice eq 1) {
+        result = add(num1 num2);
+        print "Addition"
+    } else {
+        if (choice eq 2) {
+            result = multiply(num1 num2);
+            print "Multiplication"
+        } else {
+            print "Invalid"
+        }
+    };
+    
+    // Display result
+    print result;
+    
+    halt
+}
