@@ -7,9 +7,11 @@ This is the main entry point for the SPL compiler.
 Currently demonstrates the lexer functionality with modular architecture.
 """
 
+
 from lexer import tokenize_spl
 from spl_types import LexerError, TokenType
 from spl_utils import format_token_list, config
+from parser import parse_spl
 
 
 def print_tokens(tokens):
@@ -23,47 +25,60 @@ def print_tokens(tokens):
     print(f"Total tokens: {len([t for t in tokens if t.type != TokenType.EOF])}")
 
 
-def demonstrate_lexer_architecture():
-    """Demonstrate the lexer with modular architecture"""
-    print("=== SPL Lexer - Modular Architecture Demo ===\n")
-    
+
+def demonstrate_lexer_and_parser():
+    """Demonstrate the lexer and parser with modular architecture"""
+    print("=== SPL Lexer & Parser - Modular Architecture Demo ===\n")
+
     # Example program
     program = """
     glob {
-        result
+        result;
     }
-    
-    func {
-        add(x y) {
-            local { sum }
-            sum = x plus y;
-            return sum
+
+    proc {
+        init() {
+            local { temp };
+            temp = 0;
         }
     }
-    
+
+    func {
+        add(x y) {
+            local { sum };
+            sum = ( x plus y );
+        }; return sum;
+    }
+
     main {
-        var { a b }
+        var { a b };
         a = 10;
         b = 20;
         result = add(a b);
         print result;
-        halt
+        halt;
     }
     """
-    
+
     print("1. Source Code:")
     print(program)
     print("\n" + "="*60 + "\n")
-    
+
     try:
         # Lexical Analysis
         print("2. Lexical Analysis (Tokenization):")
         tokens = tokenize_spl(program, debug=config.get('debug_lexer'))
         print_tokens(tokens)
         print("\n" + "="*60 + "\n")
-        
+
+        # Parsing
+        print("3. Parsing (AST Construction):")
+        ast = parse_spl(tokens)
+        print_ast(ast)
+        print("\n" + "="*60 + "\n")
+
         # Show modular architecture benefits
-        print("3. Modular Architecture Benefits:")
+        print("4. Modular Architecture Benefits:")
         print("   ✅ Shared TokenType enum used")
         print("   ✅ Shared SPLConstants for keywords")
         print("   ✅ Shared SPLValidator for validation")
@@ -71,19 +86,42 @@ def demonstrate_lexer_architecture():
         print("   ✅ Shared debugging utilities")
         print("   ✅ Configurable debug modes")
         print("\n" + "="*60 + "\n")
-        
+
         # Future phases (placeholders)
-        print("4. Future Compilation Phases:")
-        print("   📝 Parsing (Syntax Analysis) - TODO")
-        print("   📝 Semantic Analysis - TODO") 
+        print("5. Future Compilation Phases:")
+        print("   📝 Semantic Analysis - TODO")
         print("   📝 Code Generation - TODO")
-        
-        print("\n🎉 Lexer with modular architecture working perfectly!")
-        
+
+        print("\n🎉 Lexer and parser with modular architecture working perfectly!")
+
     except LexerError as e:
         print(f"❌ Lexical Error: {e}")
     except Exception as e:
         print(f"❌ Unexpected Error: {e}")
+
+
+# Simple AST pretty printer for demonstration
+def print_ast(node, indent=0):
+    prefix = '  ' * indent
+    if node is None:
+        print(prefix + 'None')
+        return
+    cls = node.__class__.__name__
+    if hasattr(node, '__dict__'):
+        print(f"{prefix}{cls}:")
+        for k, v in node.__dict__.items():
+            print(f"{prefix}  {k}:", end=' ')
+            if isinstance(v, list):
+                print()
+                for item in v:
+                    print_ast(item, indent+2)
+            elif hasattr(v, '__dict__'):
+                print()
+                print_ast(v, indent+2)
+            else:
+                print(repr(v))
+    else:
+        print(f"{prefix}{repr(node)}")
 
 
 def demo_lexer():
@@ -95,21 +133,21 @@ def demo_lexer():
     print("Example 1: Basic SPL Program Structure")
     program1 = """
     glob {
-        counter
+        counter;
     }
-    
+
     proc {
         increment() {
-            local { temp }
-            counter = counter plus 1
+            local { temp };
+            counter = counter plus 1;
         }
     }
-    
+
     main {
-        var { x }
+        var { x };
         x = 10;
         print "Hello";
-        halt
+        halt;
     }
     """
     
@@ -126,10 +164,9 @@ def demo_lexer():
     program2 = """
     func {
         calculate(a b) {
-            local { result }
+            local { result };
             result = (a plus b) mult 2;
-            return result
-        }
+        }; return result;
     }
     """
     
@@ -164,25 +201,26 @@ def interactive_lexer():
             print(f"Unexpected error: {e}")
 
 
+
 def main():
     """Main function"""
-    print("SPL Compiler - Lexical Analyzer")
+    print("SPL Compiler - Lexical & Syntax Analyzer")
     print("COS341 Semester Project 2025")
     print("-" * 40)
-    
+
     # Show configuration
     print(f"Debug mode: Lexer={config.get('debug_lexer')}")
     print()
-    
-    # Run demonstrations
-    demonstrate_lexer_architecture()
-    
+
+    # Run demonstration (lexer + parser)
+    demonstrate_lexer_and_parser()
+
     # Ask if user wants more demos
     try:
         choice = input("\nRun additional lexer demo? (y/n): ").lower()
         if choice in ['y', 'yes']:
             demo_lexer()
-        
+
         choice = input("\nRun interactive lexer? (y/n): ").lower()
         if choice in ['y', 'yes']:
             interactive_lexer()
