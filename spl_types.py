@@ -105,6 +105,10 @@ class LexerError(SPLError):
     """Exception raised when lexical analysis fails"""
     pass
 
+class ParseError(SPLError):
+    """Error raised during parsing (syntax errors)."""
+    pass
+
 
 # Future error types (placeholders for when parser/semantic analysis are implemented)
 # class ParseError(SPLError):
