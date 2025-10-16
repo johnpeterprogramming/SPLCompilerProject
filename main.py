@@ -33,30 +33,28 @@ def demonstrate_lexer_and_parser():
     # Example program
     program = """
     glob {
-        result;
+        result
     }
 
     proc {
         init() {
-            local { temp };
-            temp = 0;
+            local { temp } temp = 0
         }
     }
 
     func {
         add(x y) {
-            local { sum };
-            sum = ( x plus y );
-        }; return sum;
+            local { sum } sum = ( x plus y ); return sum
+        }
     }
 
     main {
-        var { a b };
+        var { a b }
         a = 10;
         b = 20;
         result = add(a b);
         print result;
-        halt;
+        halt
     }
     """
 
