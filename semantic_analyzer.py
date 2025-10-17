@@ -463,7 +463,7 @@ class SemanticAnalyzer:
             print("\n=== Semantic Errors ===")
             self.errors.print_errors()
         else:
-            print("\n✅ No semantic errors found!")
+            print("\n No semantic errors found!")
     
     def get_error_count(self) -> int:
         """Get the number of semantic errors"""

@@ -2,10 +2,22 @@ from spl_types import TokenType, Token, SPLError, ParseError
 from spl_utils import ErrorReporter
 
 # === AST Node Classes ===
-class ASTNode: pass
+# Global counter for unique node IDs
+_node_id_counter = 0
+
+def _get_next_node_id():
+    """Generate unique node ID"""
+    global _node_id_counter
+    _node_id_counter += 1
+    return _node_id_counter
+
+class ASTNode:
+    def __init__(self):
+        self.node_id = _get_next_node_id()
 
 class ProgramNode(ASTNode):
     def __init__(self, globals_, procs, funcs, main):
+        super().__init__()
         self.globals = globals_
         self.procs = procs
         self.funcs = funcs
@@ -13,29 +25,35 @@ class ProgramNode(ASTNode):
 
 class VariableListNode(ASTNode):
     def __init__(self, variables):
+        super().__init__()
         self.variables = variables  # list of VariableNode
 
 class VariableNode(ASTNode):
     def __init__(self, name, next_var=None):
+        super().__init__()
         self.name = name
         self.next = next_var
 
 class ProcDefListNode(ASTNode):
     def __init__(self, procs):
+        super().__init__()
         self.procs = procs  # list of ProcDefNode
 
 class ProcDefNode(ASTNode):
     def __init__(self, name, params, body):
+        super().__init__()
         self.name = name
         self.params = params
         self.body = body
 
 class FuncDefListNode(ASTNode):
     def __init__(self, funcs):
+        super().__init__()
         self.funcs = funcs  # list of FuncDefNode
 
 class FuncDefNode(ASTNode):
     def __init__(self, name, params, body, return_atom):
+        super().__init__()
         self.name = name
         self.params = params
         self.body = body
@@ -43,65 +61,78 @@ class FuncDefNode(ASTNode):
 
 class BodyNode(ASTNode):
     def __init__(self, locals_, algo):
+        super().__init__()
         self.locals = locals_
         self.algo = algo
 
 class ParamNode(ASTNode):
     def __init__(self, params):
+        super().__init__()
         self.params = params  # list of VariableNode
 
 class MainNode(ASTNode):
     def __init__(self, vars_, algo):
+        super().__init__()
         self.vars = vars_
         self.algo = algo
 
 class AlgoNode(ASTNode):
     def __init__(self, instrs):
+        super().__init__()
         self.instrs = instrs  # list of InstrNode
 
 class InstrNode(ASTNode):
     def __init__(self, kind, value):
+        super().__init__()
         self.kind = kind  # 'halt', 'print', 'call', 'assign', 'loop', 'branch'
         self.value = value
 
 class AssignNode(ASTNode):
     def __init__(self, var, expr):
+        super().__init__()
         self.var = var
         self.expr = expr
 
 class CallNode(ASTNode):
     def __init__(self, name, args):
+        super().__init__()
         self.name = name
         self.args = args
 
 class LoopNode(ASTNode):
     def __init__(self, kind, cond, body):
+        super().__init__()
         self.kind = kind  # 'while' or 'do-until'
         self.cond = cond
         self.body = body
 
 class BranchNode(ASTNode):
     def __init__(self, cond, then_body, else_body=None):
+        super().__init__()
         self.cond = cond
         self.then_body = then_body
         self.else_body = else_body
 
 class OutputNode(ASTNode):
     def __init__(self, kind, value):
+        super().__init__()
         self.kind = kind  # 'atom' or 'string'
         self.value = value
 
 class InputNode(ASTNode):
     def __init__(self, args):
+        super().__init__()
         self.args = args  # list of AtomNode (max 3)
 
 class AtomNode(ASTNode):
     def __init__(self, kind, value):
+        super().__init__()
         self.kind = kind  # 'var' or 'number'
         self.value = value
 
 class TermNode(ASTNode):
     def __init__(self, kind, value):
+        super().__init__()
         self.kind = kind  # 'atom', 'unop', or 'binop'
         self.value = value
 

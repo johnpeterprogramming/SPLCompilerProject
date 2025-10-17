@@ -110,15 +110,12 @@ class ParseError(SPLError):
     pass
 
 
-# Future error types (placeholders for when parser/semantic analysis are implemented)
-# class ParseError(SPLError):
-#     """Exception raised when parsing fails"""
-#     pass
+class SemanticError(SPLError):
+    """Exception raised when semantic analysis fails"""
+    pass
 
-# class SemanticError(SPLError):
-#     """Exception raised when semantic analysis fails"""
-#     pass
 
+# Future error types (placeholders for code generation)
 # class CodeGenError(SPLError):
 #     """Exception raised during code generation"""
 #     pass
