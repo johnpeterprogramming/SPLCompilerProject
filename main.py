@@ -9,9 +9,10 @@ Currently demonstrates the lexer functionality with modular architecture.
 
 
 from lexer import tokenize_spl
-from spl_types import LexerError, TokenType
+from spl_types import LexerError, SemanticError, TokenType
 from spl_utils import format_token_list, config
 from parser import parse_spl
+from semantic_analyzer import analyze_semantics
 
 
 def print_tokens(tokens):
@@ -75,27 +76,45 @@ def demonstrate_lexer_and_parser():
         print_ast(ast)
         print("\n" + "="*60 + "\n")
 
+        # Semantic Analysis
+        print("4. Semantic Analysis (Name-Scope Rules):")
+        symbol_table, semantic_errors = analyze_semantics(ast)
+        
+        if semantic_errors.has_errors():
+            print("❌ Semantic Errors Found:")
+            semantic_errors.print_errors()
+        else:
+            print("✅ No semantic errors found!")
+        
+        print("\nSymbol Table:")
+        symbol_table.print_table()
+        print("\n" + "="*60 + "\n")
+
         # Show modular architecture benefits
-        print("4. Modular Architecture Benefits:")
+        print("5. Modular Architecture Benefits:")
         print("   ✅ Shared TokenType enum used")
         print("   ✅ Shared SPLConstants for keywords")
         print("   ✅ Shared SPLValidator for validation")
-        print("   ✅ Shared error handling (LexerError)")
+        print("   ✅ Shared error handling (LexerError, SemanticError)")
         print("   ✅ Shared debugging utilities")
         print("   ✅ Configurable debug modes")
+        print("   ✅ Symbol table with node IDs")
         print("\n" + "="*60 + "\n")
 
         # Future phases (placeholders)
-        print("5. Future Compilation Phases:")
-        print("   📝 Semantic Analysis - TODO")
+        print("6. Future Compilation Phases:")
         print("   📝 Code Generation - TODO")
 
-        print("\n🎉 Lexer and parser with modular architecture working perfectly!")
+        print("\n🎉 Lexer, parser, and semantic analyzer working perfectly!")
 
     except LexerError as e:
         print(f"❌ Lexical Error: {e}")
+    except SemanticError as e:
+        print(f"❌ Semantic Error: {e}")
     except Exception as e:
         print(f"❌ Unexpected Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 # Simple AST pretty printer for demonstration

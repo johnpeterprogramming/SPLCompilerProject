@@ -1,0 +1,43 @@
+// Example SPL Program with Semantic Errors
+// This demonstrates the semantic analyzer error detection
+
+glob {
+    x
+    x           // ERROR: Duplicate global variable
+    conflict
+}
+
+proc {
+    conflict() {    // ERROR: Variable 'conflict' conflicts with procedure
+        local { temp }
+        halt
+    }
+    
+    myproc(a a) {   // ERROR: Duplicate parameter
+        local { a }  // ERROR: Local variable shadows parameter
+        halt
+    }
+}
+
+func {
+    conflict() {    // ERROR: Procedure 'conflict' conflicts with function
+        local { }
+        halt;
+        return 0
+    }
+    
+    calc(p) {
+        local { }
+        undeclared = 5; // ERROR: Undeclared variable
+        halt;
+        return p
+    }
+}
+
+main {
+    var { m m }     // ERROR: Duplicate main variable
+    unknown = 10;   // ERROR: Undeclared variable in main
+    halt
+}
+
+
