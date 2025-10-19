@@ -9,6 +9,8 @@ import unittest
 from lexer import tokenize_spl
 from parser import parse_spl
 from semantic_analyzer import analyze_semantics
+from spl_utils import ErrorReporter
+from type_checker import TypeChecker
 from spl_types import SemanticError
 
 
@@ -409,9 +411,10 @@ class TestSemanticAnalyzer(unittest.TestCase):
         func { 
             func1() { local { temp } temp = 3; return temp }
         }
-        main { var { temp } temp = 4; halt }
+        main { var { temp } temp = 4; temp = 2; halt }
         """
         symbol_table, errors = self._analyze_program(program)
+        # symbol_table.print_table()
         self.assertFalse(errors.has_errors(),
                         f"Expected no errors, got: {[str(e) for e in errors.errors]}")
         
@@ -446,6 +449,228 @@ class TestSymbolTable(unittest.TestCase):
         self.assertEqual(len(x_symbols), 1)
         self.assertEqual(x_symbols[0].name, 'x')
 
+
+class TestTypeChecker(unittest.TestCase):
+    """Type checking tests according to the SPL spec"""
+
+    def _analyze_and_typecheck(self, program_text: str) -> ErrorReporter:
+        tokens = tokenize_spl(program_text)
+        ast = parse_spl(tokens)
+        symtab, sem_errors = analyze_semantics(ast)
+        # Use the same reporter to collect type errors after semantic phase
+        type_checker = TypeChecker(symtab, ast, sem_errors)
+        type_checker.check_program()
+        return sem_errors
+
+
+    def test_arithmetic_terms_numeric(self):
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a b c }
+            a = ( b plus c );
+            a = ( ( b mult c ) div ( b minus c ) );
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertFalse(errors.has_errors(), f"Unexpected errors: {[str(e) for e in errors.errors]}")
+
+    def test_logical_terms_boolean_in_conditions(self):
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a b }
+            if ( ( a > b ) and ( ( a > b ) or ( b > a ) ) ) { halt } else { halt };
+            while ( ( a > b ) ) { halt };
+            do { halt } until ( ( a > b ) );
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertFalse(errors.has_errors(), f"Unexpected errors: {[str(e) for e in errors.errors]}")
+
+    def test_assignment_rhs_must_be_numeric(self):
+        # Using not (boolean) on RHS should error
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a b }
+            a = ( not ( a > b ) );
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertTrue(errors.has_errors())
+
+    def test_print_atom_must_be_numeric(self):
+        # print string ok; print atom is numeric by fact
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a }
+            print "hello";
+            print a;
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertFalse(errors.has_errors(), f"Unexpected errors: {[str(e) for e in errors.errors]}")
+
+    def test_function_return_must_be_numeric(self):
+        # Return of Atom is numeric; returning number is OK
+        program = """
+        glob { }
+        proc { }
+        func { f() { local {} halt; return 0 } }
+        main { var { a } a = f(); halt }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertFalse(errors.has_errors(), f"Unexpected errors: {[str(e) for e in errors.errors]}")
+
+    def test_procedure_vs_function_use(self):
+        # Standalone NAME() must be a procedure; assignment NAME() must be a function
+        program = """
+        glob { x }
+        proc { p() { local {} halt } }
+        func { f() { local {} halt; return x } }
+        main { var { a }
+            p();
+            a = f();
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        # Depending on checker implementation, if not distinguishing yet, no errors.
+        # Once implemented, this should still be valid (correct usage of proc vs func)
+        self.assertFalse(errors.has_errors(), f"Unexpected errors: {[str(e) for e in errors.errors]}")
+
+    def test_condition_must_be_boolean(self):
+        # Using numeric term directly as condition should error
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a }
+            if ( a ) { halt } else { halt };
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertTrue(errors.has_errors())
+
+    def test_arithmetic_with_boolean_operand_should_error(self):
+        # (a > b) is boolean; cannot be operand to plus
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a b c }
+            c = ( ( a > b ) plus 1 );
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertTrue(errors.has_errors())
+
+    def test_logical_with_numeric_operands_should_error(self):
+        # 'and' requires boolean operands
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a b }
+            if ( ( a and b ) ) { halt } else { halt };
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertTrue(errors.has_errors())
+
+    def test_comparison_with_boolean_operands_should_error(self):
+        # eq expects numeric operands, not boolean
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a b }
+            if ( ( ( a > b ) eq ( a > b ) ) ) { halt } else { halt };
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertTrue(errors.has_errors())
+
+    def test_assign_from_procedure_should_error(self):
+        program = """
+        glob { x }
+        proc { p() { local {} halt } }
+        func { f() { local {} halt; return x } }
+        main { var { a }
+            a = p();
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertTrue(errors.has_errors())
+
+    def test_call_function_as_procedure_should_error(self):
+        program = """
+        glob { x }
+        proc { p() { local {} halt } }
+        func { f() { local {} halt; return x } }
+        main { var { a }
+            f();
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertTrue(errors.has_errors())
+
+    def test_while_condition_numeric_should_error(self):
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a }
+            while ( a ) { halt };
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertTrue(errors.has_errors())
+
+    def test_do_until_condition_numeric_should_error(self):
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a }
+            do { halt } until ( a );
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertTrue(errors.has_errors())
+
+    def test_grouping_parentheses_in_arithmetic_ok(self):
+        program = """
+        glob { }
+        proc { }
+        func { }
+        main { var { a b c }
+            a = 1;
+            b = 2;
+            c = ( ( a plus b ) );
+            halt
+        }
+        """
+        errors = self._analyze_and_typecheck(program)
+        self.assertFalse(errors.has_errors(), f"Unexpected errors: {[str(e) for e in errors.errors]}")
 
 if __name__ == '__main__':
     unittest.main()
