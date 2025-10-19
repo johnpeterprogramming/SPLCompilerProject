@@ -21,6 +21,7 @@ from parser import (
     ParamNode, BodyNode, MainNode, AlgoNode, InstrNode,
     AssignNode, CallNode, AtomNode, TermNode, OutputNode
 )
+from type_checker import TypeChecker
 
 
 class SemanticAnalyzer:
@@ -44,13 +45,18 @@ class SemanticAnalyzer:
             return self.symbol_table
         
         try:
-            self._analyze_program(ast)
+            self._analyze_program_scopes(ast)
         except SemanticError as e:
             self.errors.add_error(e)
-        
+
+        try:
+            self._analyze_program_types(ast)
+        except SemanticError as e:
+            self.errors.add_error(e)
+
         return self.symbol_table
     
-    def _analyze_program(self, node: ProgramNode):
+    def _analyze_program_scopes(self, node: ProgramNode):
         """Analyze the entire program structure"""
         
         # Step 1: Collect all global variable names, procedure names, and function names
@@ -75,6 +81,10 @@ class SemanticAnalyzer:
         
         # Step 6: Analyze main
         self._analyze_main(node.main)
+
+    def _analyze_program_types(self, node: ProgramNode):
+        type_checker = TypeChecker(self.symbol_table, node, self.errors)
+        type_checker.check_program()
     
     def _collect_variable_names(self, var_list: VariableListNode) -> Set[str]:
         """Collect all variable names from a variable list"""
@@ -477,5 +487,6 @@ def analyze_semantics(ast: ProgramNode) -> tuple[SymbolTable, ErrorReporter]:
     """
     analyzer = SemanticAnalyzer()
     symbol_table = analyzer.analyze(ast)
+
     return symbol_table, analyzer.errors
 

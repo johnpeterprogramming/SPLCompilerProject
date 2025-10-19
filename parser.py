@@ -1,8 +1,10 @@
+from typing import List, LiteralString, Optional
 from spl_types import TokenType, Token, SPLError, ParseError
 from spl_utils import ErrorReporter
 
 # === AST Node Classes ===
 # Global counter for unique node IDs
+# TODO: add line and column number info to Nodes to improve error handling
 _node_id_counter = 0
 
 def _get_next_node_id():
@@ -29,6 +31,7 @@ class VariableListNode(ASTNode):
         self.variables = variables  # list of VariableNode
 
 class VariableNode(ASTNode):
+    name: LiteralString
     def __init__(self, name, next_var=None):
         super().__init__()
         self.name = name
@@ -39,7 +42,84 @@ class ProcDefListNode(ASTNode):
         super().__init__()
         self.procs = procs  # list of ProcDefNode
 
+
+class ParamNode(ASTNode):
+    params: List[VariableNode]
+    def __init__(self, params):
+        super().__init__()
+        self.params = params  # list of VariableNode
+
+class AtomNode(ASTNode):
+    kind: LiteralString
+    def __init__(self, kind, value):
+        super().__init__()
+        self.kind = kind  # 'var' or 'number'
+        self.value = value
+
+class InputNode(ASTNode):
+    args: List[AtomNode]
+    def __init__(self, args):
+        super().__init__()
+        self.args = args  # list of AtomNode (max 3)
+
+class CallNode(ASTNode):
+    args: InputNode
+    name: LiteralString
+    def __init__(self, name, args):
+        super().__init__()
+        self.name = name
+        self.args = args
+
+class OutputNode(ASTNode):
+    # Not including value, 
+    kind: LiteralString
+    def __init__(self, kind, value):
+        super().__init__()
+        self.kind = kind  # 'atom' or 'string'
+        self.value = value
+
+class TermNode(ASTNode):
+    kind: LiteralString
+    def __init__(self, kind, value):
+        super().__init__()
+        self.kind = kind  # 'atom', 'unop', or 'binop'
+        self.value = value
+
+class AssignNode(ASTNode):
+    var: LiteralString
+    expr: CallNode|TermNode
+    def __init__(self, var, expr):
+        super().__init__()
+        self.var = var
+        self.expr = expr
+
+class InstrNode(ASTNode):
+    kind: LiteralString
+    value: Optional[OutputNode|CallNode|AssignNode]
+    def __init__(self, kind, value):
+        super().__init__()
+        self.kind = kind  # 'halt', 'print', 'call', 'assign', 'loop', 'branch'
+        self.value = value
+
+
+class AlgoNode(ASTNode):
+    instrs: List[InstrNode]
+    def __init__(self, instrs):
+        super().__init__()
+        self.instrs = instrs  # list of InstrNode
+
+class BodyNode(ASTNode):
+    locals: ParamNode
+    algo: AlgoNode
+    def __init__(self, locals_, algo):
+        super().__init__()
+        self.locals = locals_
+        self.algo = algo
+
 class ProcDefNode(ASTNode):
+    name: LiteralString
+    params: ParamNode
+    body: BodyNode
     def __init__(self, name, params, body):
         super().__init__()
         self.name = name
@@ -52,6 +132,7 @@ class FuncDefListNode(ASTNode):
         self.funcs = funcs  # list of FuncDefNode
 
 class FuncDefNode(ASTNode):
+    name: LiteralString
     def __init__(self, name, params, body, return_atom):
         super().__init__()
         self.name = name
@@ -59,45 +140,13 @@ class FuncDefNode(ASTNode):
         self.body = body
         self.return_atom = return_atom
 
-class BodyNode(ASTNode):
-    def __init__(self, locals_, algo):
-        super().__init__()
-        self.locals = locals_
-        self.algo = algo
-
-class ParamNode(ASTNode):
-    def __init__(self, params):
-        super().__init__()
-        self.params = params  # list of VariableNode
-
 class MainNode(ASTNode):
+    vars: VariableListNode
+    algo: AlgoNode
     def __init__(self, vars_, algo):
         super().__init__()
         self.vars = vars_
         self.algo = algo
-
-class AlgoNode(ASTNode):
-    def __init__(self, instrs):
-        super().__init__()
-        self.instrs = instrs  # list of InstrNode
-
-class InstrNode(ASTNode):
-    def __init__(self, kind, value):
-        super().__init__()
-        self.kind = kind  # 'halt', 'print', 'call', 'assign', 'loop', 'branch'
-        self.value = value
-
-class AssignNode(ASTNode):
-    def __init__(self, var, expr):
-        super().__init__()
-        self.var = var
-        self.expr = expr
-
-class CallNode(ASTNode):
-    def __init__(self, name, args):
-        super().__init__()
-        self.name = name
-        self.args = args
 
 class LoopNode(ASTNode):
     def __init__(self, kind, cond, body):
@@ -107,34 +156,14 @@ class LoopNode(ASTNode):
         self.body = body
 
 class BranchNode(ASTNode):
+    cond: TermNode
+    then_body: AlgoNode
+    else_body: Optional[AlgoNode]
     def __init__(self, cond, then_body, else_body=None):
         super().__init__()
         self.cond = cond
         self.then_body = then_body
         self.else_body = else_body
-
-class OutputNode(ASTNode):
-    def __init__(self, kind, value):
-        super().__init__()
-        self.kind = kind  # 'atom' or 'string'
-        self.value = value
-
-class InputNode(ASTNode):
-    def __init__(self, args):
-        super().__init__()
-        self.args = args  # list of AtomNode (max 3)
-
-class AtomNode(ASTNode):
-    def __init__(self, kind, value):
-        super().__init__()
-        self.kind = kind  # 'var' or 'number'
-        self.value = value
-
-class TermNode(ASTNode):
-    def __init__(self, kind, value):
-        super().__init__()
-        self.kind = kind  # 'atom', 'unop', or 'binop'
-        self.value = value
 
 # === Parser Implementation ===
 
@@ -177,11 +206,11 @@ class Parser:
         return None
 
     # ---- entry ----
-    def parse(self):
+    def parse(self) -> ProgramNode:
         return self.parse_program()
 
     # SPL_PROG ::= glob { VARIABLES } proc { PROCDEFS } func { FUNCDEFS } main { MAINPROG }
-    def parse_program(self):
+    def parse_program(self) -> ProgramNode:
         self.match(TokenType.GLOB)
         self.match(TokenType.LBRACE)
         globals_ = self.parse_variables()
@@ -206,7 +235,7 @@ class Parser:
 
     # ---- variables / lists ----
     # VARIABLES ::= (empty) | VAR VARIABLES
-    def parse_variables(self):
+    def parse_variables(self) -> VariableListNode:
         variables = []
         while self.peek(TokenType.USER_DEFINED_NAME):
             name = self.match(TokenType.USER_DEFINED_NAME)
@@ -214,14 +243,14 @@ class Parser:
         return VariableListNode(variables)
 
     # PROCDEFS ::= (empty) | PDEF PROCDEFS
-    def parse_procdefs(self):
+    def parse_procdefs(self) -> ProcDefListNode:
         procs = []
         while self.peek(TokenType.USER_DEFINED_NAME):
             procs.append(self.parse_pdef())
         return ProcDefListNode(procs)
 
     # PDEF ::= NAME ( PARAM ) { BODY }
-    def parse_pdef(self):
+    def parse_pdef(self) -> ProcDefNode:
         name = self.match(TokenType.USER_DEFINED_NAME)
         self.match(TokenType.LPAREN)
         params = self.parse_param()
@@ -232,14 +261,14 @@ class Parser:
         return ProcDefNode(name, params, body)
 
     # FUNCDEFS ::= (empty) | FDEF FUNCDEFS
-    def parse_funcdefs(self):
+    def parse_funcdefs(self) -> FuncDefListNode:
         funcs = []
         while self.peek(TokenType.USER_DEFINED_NAME):
             funcs.append(self.parse_fdef())
         return FuncDefListNode(funcs)
 
     # FDEF ::= NAME ( PARAM ) { BODY ; return ATOM }
-    def parse_fdef(self):
+    def parse_fdef(self) -> FuncDefNode:
         name = self.match(TokenType.USER_DEFINED_NAME)
         self.match(TokenType.LPAREN)
         params = self.parse_param()
@@ -253,7 +282,7 @@ class Parser:
         return FuncDefNode(name, params, body, return_atom)
 
     # BODY ::= local { MAXTHREE } ALGO
-    def parse_body(self):
+    def parse_body(self) -> BodyNode:
         locals_ = ParamNode([])
         if self.peek(TokenType.LOCAL):
             self.match(TokenType.LOCAL)
@@ -264,11 +293,11 @@ class Parser:
         return BodyNode(locals_, algo)
 
     # PARAM ::= MAXTHREE
-    def parse_param(self):
+    def parse_param(self) -> ParamNode:
         return self.parse_maxthree()
 
     # MAXTHREE ::= (empty) | VAR | VAR VAR | VAR VAR VAR
-    def parse_maxthree(self):
+    def parse_maxthree(self) -> ParamNode:
         params = []
         # Parse up to 3 variables, but validate exactly
         count = 0
@@ -289,7 +318,7 @@ class Parser:
         return ParamNode(params)
 
     # MAINPROG ::= var { VARIABLES } ALGO
-    def parse_mainprog(self):
+    def parse_mainprog(self) -> MainNode:
         self.match(TokenType.VAR)
         self.match(TokenType.LBRACE)
         vars_ = self.parse_variables()
@@ -299,7 +328,7 @@ class Parser:
 
     # ---- algorithm / instruction list ----
     # ALGO ::= INSTR | INSTR ; ALGO
-    def parse_algo(self):
+    def parse_algo(self) -> AlgoNode:
         instrs = []
         instrs.append(self.parse_instr())
 
@@ -329,7 +358,7 @@ class Parser:
         return AlgoNode(instrs)
 
     # ---- instructions ----
-    def parse_instr(self):
+    def parse_instr(self) -> InstrNode:
         if self.peek(TokenType.HALT):
             self.match(TokenType.HALT)
             return InstrNode('halt', None)
@@ -357,7 +386,7 @@ class Parser:
             self.errors.add_error(err)
             raise err
 
-    def parse_name_instruction(self):
+    def parse_name_instruction(self) -> InstrNode:
         """Handle instructions starting with USER_DEFINED_NAME"""
         name = self.match(TokenType.USER_DEFINED_NAME)
 
@@ -393,7 +422,7 @@ class Parser:
             raise err
 
     # ---- loops / branches ----
-    def parse_loop(self):
+    def parse_loop(self) -> LoopNode:
         if self.peek(TokenType.WHILE):
             # LOOP ::= while TERM { ALGO }
             self.match(TokenType.WHILE)
@@ -421,7 +450,7 @@ class Parser:
             self.errors.add_error(err)
             raise err
 
-    def parse_branch(self):
+    def parse_branch(self) -> BranchNode:
         # BRANCH ::= if TERM { ALGO } | if TERM { ALGO } else { ALGO }
         self.match(TokenType.IF)
         cond = self.parse_term()
@@ -440,7 +469,7 @@ class Parser:
 
     # ---- I/O / atoms / terms ----
     # OUTPUT ::= ATOM | string
-    def parse_output(self):
+    def parse_output(self) -> OutputNode:
         if self.peek(TokenType.STRING):
             val = self.match(TokenType.STRING)
             # Validate string length (max 15 characters)
@@ -458,7 +487,7 @@ class Parser:
             return OutputNode('atom', atom)
 
     # INPUT ::= (empty) | ATOM | ATOM ATOM | ATOM ATOM ATOM
-    def parse_input(self):
+    def parse_input(self) -> InputNode:
         args = []
         count = 0
         
@@ -481,7 +510,7 @@ class Parser:
         return InputNode(args)
 
     # ATOM ::= VAR | number
-    def parse_atom(self):
+    def parse_atom(self) -> AtomNode:
         if self.peek(TokenType.USER_DEFINED_NAME):
             name = self.match(TokenType.USER_DEFINED_NAME)
             # Validate that the name is not a reserved keyword
@@ -512,14 +541,14 @@ class Parser:
             raise err
 
     # TERM ::= ATOM | ( UNOP TERM ) | ( TERM BINOP TERM )
-    def parse_term(self):
+    def parse_term(self) -> TermNode:
         if self.peek(TokenType.USER_DEFINED_NAME) or self.peek(TokenType.NUMBER):
             # TERM ::= ATOM
             return TermNode('atom', self.parse_atom())
             
         elif self.peek(TokenType.LPAREN):
             self.match(TokenType.LPAREN)
-            
+
             if self.peek(TokenType.NEG) or self.peek(TokenType.NOT):
                 # TERM ::= ( UNOP TERM )
                 op = self.parse_unop()
@@ -527,8 +556,14 @@ class Parser:
                 self.match(TokenType.RPAREN)
                 return TermNode('unop', (op, operand))
             else:
-                # TERM ::= ( TERM BINOP TERM )
+                # Support grouping: ( TERM )
                 left = self.parse_term()
+                # If the next token is a right paren, treat as grouped term
+                if self.peek(TokenType.RPAREN):
+                    self.match(TokenType.RPAREN)
+                    return left if isinstance(left, TermNode) else TermNode('atom', left)
+
+                # Otherwise parse binary op form: ( TERM BINOP TERM )
                 op = self.parse_binop()
                 right = self.parse_term()
                 self.match(TokenType.RPAREN)

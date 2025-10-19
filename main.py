@@ -90,21 +90,6 @@ def demonstrate_lexer_and_parser():
         symbol_table.print_table()
         print("\n" + "="*60 + "\n")
 
-        # Show modular architecture benefits
-        print("5. Modular Architecture Benefits:")
-        print("   ✅ Shared TokenType enum used")
-        print("   ✅ Shared SPLConstants for keywords")
-        print("   ✅ Shared SPLValidator for validation")
-        print("   ✅ Shared error handling (LexerError, SemanticError)")
-        print("   ✅ Shared debugging utilities")
-        print("   ✅ Configurable debug modes")
-        print("   ✅ Symbol table with node IDs")
-        print("\n" + "="*60 + "\n")
-
-        # Future phases (placeholders)
-        print("6. Future Compilation Phases:")
-        print("   📝 Code Generation - TODO")
-
         print("\n🎉 Lexer, parser, and semantic analyzer working perfectly!")
 
     except LexerError as e:
