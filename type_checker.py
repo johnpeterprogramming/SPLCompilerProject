@@ -1,4 +1,4 @@
-from typing import List, Optional, LiteralString, cast
+from typing import List, Optional, cast
 from spl_types import SemanticError
 from spl_utils import ErrorReporter
 from symbol_table import SymbolTable, ScopeType, SymbolType
@@ -27,7 +27,7 @@ class TypeChecker:
         self.current_scope: ScopeType = ScopeType.GLOBAL
         self.current_parent_scope_id: Optional[int] = None
 
-    def type_error(self, message: LiteralString, node_id: int = 0):
+    def type_error(self, message: str, node_id: int = 0):
         self.errors.add_error(SemanticError("Type error: " + message, node_id, 0))
 
     def check_program(self):
@@ -160,7 +160,7 @@ class TypeChecker:
             expected = self.get_unop_type(op)
             got = self.check_term(operand)
             if got != expected:
-                self.type_error(f"unary '{cast(LiteralString, op)}' expects {expected.value}", term_node.node_id)
+                self.type_error(f"unary '{cast(str, op)}' expects {expected.value}", term_node.node_id)
             return expected
         if term_node.kind == 'binop':
             op, left, right = term_node.value
@@ -169,15 +169,15 @@ class TypeChecker:
             rt = self.check_term(right)
             if category == DataType.NUMERIC:
                 if lt != DataType.NUMERIC or rt != DataType.NUMERIC:
-                    self.type_error(f"arithmetic '{cast(LiteralString, op)}' expects numeric operands", term_node.node_id)
+                    self.type_error(f"arithmetic '{cast(str, op)}' expects numeric operands", term_node.node_id)
                 return DataType.NUMERIC
             if category == DataType.BOOLEAN:
                 if lt != DataType.BOOLEAN or rt != DataType.BOOLEAN:
-                    self.type_error(f"logical '{cast(LiteralString, op)}' expects boolean operands", term_node.node_id)
+                    self.type_error(f"logical '{cast(str, op)}' expects boolean operands", term_node.node_id)
                 return DataType.BOOLEAN
             # comparison: operands numeric, result boolean
             if lt != DataType.NUMERIC or rt != DataType.NUMERIC:
-                self.type_error(f"comparison '{cast(LiteralString, op)}' expects numeric operands", term_node.node_id)
+                self.type_error(f"comparison '{cast(str, op)}' expects numeric operands", term_node.node_id)
             return DataType.BOOLEAN
         return None
 
