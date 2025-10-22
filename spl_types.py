@@ -115,10 +115,9 @@ class SemanticError(SPLError):
     pass
 
 
-# Future error types (placeholders for code generation)
-# class CodeGenError(SPLError):
-#     """Exception raised during code generation"""
-#     pass
+class CodeGenError(SPLError):
+    """Exception raised during code generation"""
+    pass
 
 
 # SPL Language Constants and Specifications

@@ -1,4 +1,4 @@
-from typing import List, LiteralString, Optional
+from typing import List, Optional, Union
 from spl_types import TokenType, Token, SPLError, ParseError
 from spl_utils import ErrorReporter
 
@@ -31,7 +31,7 @@ class VariableListNode(ASTNode):
         self.variables = variables  # list of VariableNode
 
 class VariableNode(ASTNode):
-    name: LiteralString
+    name: str
     def __init__(self, name, next_var=None):
         super().__init__()
         self.name = name
@@ -50,7 +50,7 @@ class ParamNode(ASTNode):
         self.params = params  # list of VariableNode
 
 class AtomNode(ASTNode):
-    kind: LiteralString
+    kind: str
     def __init__(self, kind, value):
         super().__init__()
         self.kind = kind  # 'var' or 'number'
@@ -64,7 +64,7 @@ class InputNode(ASTNode):
 
 class CallNode(ASTNode):
     args: InputNode
-    name: LiteralString
+    name: str
     def __init__(self, name, args):
         super().__init__()
         self.name = name
@@ -72,30 +72,30 @@ class CallNode(ASTNode):
 
 class OutputNode(ASTNode):
     # Not including value, 
-    kind: LiteralString
+    kind: str
     def __init__(self, kind, value):
         super().__init__()
         self.kind = kind  # 'atom' or 'string'
         self.value = value
 
 class TermNode(ASTNode):
-    kind: LiteralString
+    kind: str
     def __init__(self, kind, value):
         super().__init__()
         self.kind = kind  # 'atom', 'unop', or 'binop'
         self.value = value
 
 class AssignNode(ASTNode):
-    var: LiteralString
-    expr: CallNode|TermNode
+    var: str
+    expr: Union[CallNode, TermNode]
     def __init__(self, var, expr):
         super().__init__()
         self.var = var
         self.expr = expr
 
 class InstrNode(ASTNode):
-    kind: LiteralString
-    value: Optional[OutputNode|CallNode|AssignNode]
+    kind: str
+    value: Optional[Union[OutputNode, CallNode, AssignNode]]
     def __init__(self, kind, value):
         super().__init__()
         self.kind = kind  # 'halt', 'print', 'call', 'assign', 'loop', 'branch'
@@ -117,7 +117,7 @@ class BodyNode(ASTNode):
         self.algo = algo
 
 class ProcDefNode(ASTNode):
-    name: LiteralString
+    name: str
     params: ParamNode
     body: BodyNode
     def __init__(self, name, params, body):
@@ -132,7 +132,7 @@ class FuncDefListNode(ASTNode):
         self.funcs = funcs  # list of FuncDefNode
 
 class FuncDefNode(ASTNode):
-    name: LiteralString
+    name: str
     def __init__(self, name, params, body, return_atom):
         super().__init__()
         self.name = name

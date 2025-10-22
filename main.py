@@ -9,10 +9,11 @@ Currently demonstrates the lexer functionality with modular architecture.
 
 
 from lexer import tokenize_spl
-from spl_types import LexerError, SemanticError, TokenType
+from spl_types import LexerError, SemanticError, CodeGenError, TokenType
 from spl_utils import format_token_list, config
 from parser import parse_spl
 from semantic_analyzer import analyze_semantics
+from code_generator import generate_code
 
 
 def print_tokens(tokens):
@@ -81,23 +82,44 @@ def demonstrate_lexer_and_parser():
         symbol_table, semantic_errors = analyze_semantics(ast)
         
         if semantic_errors.has_errors():
-            print("❌ Semantic Errors Found:")
+            print("Semantic Errors Found:")
             semantic_errors.print_errors()
+            print("\n" + "="*60 + "\n")
+            print("Cannot proceed to code generation due to semantic errors.")
+            return
         else:
-            print("✅ No semantic errors found!")
+            print("No semantic errors found!")
         
         print("\nSymbol Table:")
         symbol_table.print_table()
         print("\n" + "="*60 + "\n")
 
-        print("\n🎉 Lexer, parser, and semantic analyzer working perfectly!")
+        # Code Generation
+        print("5. Code Generation:")
+        try:
+            output_file = "output.txt"
+            generated_code = generate_code(symbol_table, ast, output_file)
+            print(f"Code generation successful!")
+            print(f"Target code written to: {output_file}")
+            print("\nGenerated Target Code:")
+            print("-" * 40)
+            print(generated_code)
+            print("-" * 40)
+        except CodeGenError as e:
+            print(f"Code Generation Error: {e}")
+            return
+        
+        print("\n" + "="*60 + "\n")
+        print("\nAll compilation phases completed successfully!")
 
     except LexerError as e:
-        print(f"❌ Lexical Error: {e}")
+        print(f"Lexical Error: {e}")
     except SemanticError as e:
-        print(f"❌ Semantic Error: {e}")
+        print(f"Semantic Error: {e}")
+    except CodeGenError as e:
+        print(f"Code Generation Error: {e}")
     except Exception as e:
-        print(f"❌ Unexpected Error: {e}")
+        print(f"Unexpected Error: {e}")
         import traceback
         traceback.print_exc()
 
