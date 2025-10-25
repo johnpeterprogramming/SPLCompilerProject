@@ -13,7 +13,7 @@ from spl_types import LexerError, SemanticError, CodeGenError, TokenType
 from spl_utils import format_token_list, config
 from parser import parse_spl
 from semantic_analyzer import analyze_semantics
-from code_generator import generate_code
+from code_generator import generate_intermediate_code, generate_basic_code
 
 
 def print_tokens(tokens):
@@ -56,6 +56,9 @@ def demonstrate_lexer_and_parser():
         b = 20;
         result = add(a b);
         print result;
+        if ( result eq 30 ) { print "Its30" } else { print "Itsnot30" };
+        while (a > 12) { a = ( a plus 1) };
+        print a;
         halt
     }
     """
@@ -98,7 +101,7 @@ def demonstrate_lexer_and_parser():
         print("5. Code Generation:")
         try:
             output_file = "output.txt"
-            generated_code = generate_code(symbol_table, ast, output_file)
+            generated_code = generate_basic_code(symbol_table, ast, output_file)
             print(f"Code generation successful!")
             print(f"Target code written to: {output_file}")
             print("\nGenerated Target Code:")

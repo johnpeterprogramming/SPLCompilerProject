@@ -6,7 +6,7 @@ Comprehensive test for all code generation features (Phases 1 & 2)
 from lexer import tokenize_spl
 from parser import parse_spl
 from semantic_analyzer import analyze_semantics
-from code_generator import generate_code
+from code_generator import generate_intermediate_code
 
 def test_comprehensive():
     """Test all features together"""
@@ -106,7 +106,7 @@ def test_comprehensive():
         # Code generation
         print("Phase 4: Code Generation...")
         output_file = "comprehensive_output.txt"
-        generated_code = generate_code(symbol_table, ast, output_file)
+        generated_code = generate_intermediate_code(symbol_table, ast, output_file)
         
         print("\n" + "="*60)
         print("Generated Target Code:")

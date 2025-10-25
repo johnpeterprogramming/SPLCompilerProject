@@ -6,7 +6,7 @@ Test script for Phase 2: Loops (while, do-until)
 from lexer import tokenize_spl
 from parser import parse_spl
 from semantic_analyzer import analyze_semantics
-from code_generator import generate_code
+from code_generator import generate_intermediate_code
 
 def test_while_loop():
     """Test while loop"""
@@ -53,7 +53,7 @@ def test_while_loop():
             return
         
         output_file = "test_while.txt"
-        generated_code = generate_code(symbol_table, ast, output_file)
+        generated_code = generate_intermediate_code(symbol_table, ast, output_file)
         
         print("Generated Target Code:")
         print("="*60)
@@ -108,7 +108,7 @@ def test_do_until_loop():
             return
         
         output_file = "test_do_until.txt"
-        generated_code = generate_code(symbol_table, ast, output_file)
+        generated_code = generate_intermediate_code(symbol_table, ast, output_file)
         
         print("Generated Target Code:")
         print("="*60)
