@@ -12,6 +12,7 @@ from parser import (
     ProgramNode, MainNode, AlgoNode, InstrNode, AssignNode, CallNode,
     TermNode, AtomNode, OutputNode, BranchNode, LoopNode
 )
+import re
 
 
 class CodeGenerator:
@@ -582,8 +583,48 @@ class CodeGenerator:
             f.write(code)
             f.write("\n")  # Ensure file ends with newline
 
+    def to_basic(self, intermediate: str, start: int = 10, step: int = 10) -> str:
+        """
+        Convert unnumbered intermediate code to numbered BASIC.
+        - Numbers each non-empty line with start, start+step, ...
+        - Inlines labels: replaces 'GOTO Lx'/'THEN Lx' with target line numbers
+          where 'REM Lx' denotes the target label line.
+        """
+        # Normalize and collect non-empty lines
+        raw_lines = [ln.rstrip() for ln in intermediate.splitlines() if ln.strip() != ""]
+        if not raw_lines:
+            return ""
 
-def generate_code(symbol_table: SymbolTable, ast: ProgramNode, output_file: str = "output.txt") -> str:
+        # Pass 1: assign line numbers and capture label positions
+        line_no_for_index = {}
+        label_to_line = {}
+        label_re = re.compile(r"^\s*REM\s+([A-Za-z_][A-Za-z0-9_]*)\s*$")
+        for i, line in enumerate(raw_lines):
+            line_no = start + step * i
+            line_no_for_index[i] = line_no
+            m = label_re.match(line)
+            if m:
+                label_to_line[m.group(1)] = line_no
+
+        # Pass 2: rewrite GOTOs and THENs to concrete numbers
+        goto_re = re.compile(r"\bGOTO\s+([A-Za-z_][A-Za-z0-9_]*)\b")
+        then_re = re.compile(r"\bTHEN\s+([A-Za-z_][A-Za-z0-9_]*)\b")
+
+        numbered_lines: list[str] = []
+        for i, line in enumerate(raw_lines):
+            def _subst(m: re.Match) -> str:
+                label = m.group(1)
+                target = label_to_line.get(label)
+                # If label unknown, leave as-is (helps debugging).
+                return f"{m.group(0).split()[0]} {target}" if target is not None else m.group(0)
+
+            line_rewritten = goto_re.sub(_subst, then_re.sub(_subst, line))
+            numbered_lines.append(f"{line_no_for_index[i]} {line_rewritten}")
+
+        return "\n".join(numbered_lines)
+
+
+def generate_intermediate_code(symbol_table: SymbolTable, ast: ProgramNode, output_file: str = "output.txt") -> str:
     """
     Convenience function to generate code from AST.
     Returns the generated code and writes it to output_file.
@@ -593,3 +634,16 @@ def generate_code(symbol_table: SymbolTable, ast: ProgramNode, output_file: str 
     generator.write_output(output_file, code)
     return code
 
+def generate_basic_code(symbol_table: SymbolTable, ast: ProgramNode,
+                        output_file: str = "output_basic.bas",
+                        line_start: int = 10, line_step: int = 10) -> str:
+    """
+    Generate final BASIC code:
+      1) Produce intermediate code from main ALGO
+      2) Number lines and inline labels into GOTO/THEN targets
+    """
+    gen = CodeGenerator(symbol_table, ast)
+    intermediate = gen.generate()
+    basic = gen.to_basic(intermediate, start=line_start, step=line_step)
+    gen.write_output(output_file, basic)
+    return basic

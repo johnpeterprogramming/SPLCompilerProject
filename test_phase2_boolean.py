@@ -6,7 +6,7 @@ Test script for Phase 2: Boolean operators (and, or, not)
 from lexer import tokenize_spl
 from parser import parse_spl
 from semantic_analyzer import analyze_semantics
-from code_generator import generate_code
+from code_generator import generate_intermediate_code
 
 def test_and_operator():
     """Test AND operator with cascading"""
@@ -56,7 +56,7 @@ def test_and_operator():
             return
         
         output_file = "test_and.txt"
-        generated_code = generate_code(symbol_table, ast, output_file)
+        generated_code = generate_intermediate_code(symbol_table, ast, output_file)
         
         print("Generated Target Code:")
         print("="*60)
@@ -117,7 +117,7 @@ def test_or_operator():
             return
         
         output_file = "test_or.txt"
-        generated_code = generate_code(symbol_table, ast, output_file)
+        generated_code = generate_intermediate_code(symbol_table, ast, output_file)
         
         print("Generated Target Code:")
         print("="*60)
@@ -177,7 +177,7 @@ def test_complex_condition():
             return
         
         output_file = "test_complex.txt"
-        generated_code = generate_code(symbol_table, ast, output_file)
+        generated_code = generate_intermediate_code(symbol_table, ast, output_file)
         
         print("Generated Target Code:")
         print("="*60)
