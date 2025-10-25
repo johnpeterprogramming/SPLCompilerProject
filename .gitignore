@@ -311,6 +311,10 @@ todo.txt
 NOTES.md
 TODO.md
 
+# Generated code
+*.txt
+*.bas
+
 # ==========================================
 # End of .gitignore
 # ==========================================

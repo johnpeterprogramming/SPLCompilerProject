@@ -50,30 +50,13 @@ The compiler uses a **modular design** with shared components across all phases:
 - **tokenize_spl()**: Convenience function for tokenization
 - Integrated with shared validation and error handling
 
-#### `parser.py` - Parser (Stub)
+#### `parser.py` - Parser
 
 - **SPLParser**: Parser class using TokenStream
 - **parse_spl()**: Convenience function for parsing
 - Ready for full implementation using shared utilities
 
 ## Current Implementation Status
-
-### ✅ Completed
-
-- **Modular Architecture**: Shared types and utilities across phases
-- **Token System**: Complete token representation with enhanced features
-- **Token Types & Keywords**: All SPL keywords and operators defined
-- **Lexer Implementation**: Full lexical analyzer with error handling
-- **Lexer Tests**: Comprehensive test suite (23 test cases, all passing)
-- **Parser Stub**: Basic parser structure using shared components
-- **Configuration System**: Debug modes and compiler settings
-
-### 🚧 In Progress
-
-- Full parser implementation
-- Abstract Syntax Tree (AST) implementation
-- Semantic analysis
-- Code generation
 
 ## SPL Language Features
 
@@ -113,15 +96,6 @@ main {
 
 ## Lexer Implementation
 
-### Features
-
-- **Complete tokenization** of SPL source code
-- **Error handling** with line and column reporting
-- **Comment support** (`//` single-line comments)
-- **Whitespace handling** (spaces, tabs, newlines)
-- **String validation** (alphanumeric only, max 15 chars)
-- **Number validation** (no leading zeros except for `0`)
-- **Identifier validation** (lowercase letters + optional digits)
 
 ### Token Types
 
@@ -133,53 +107,15 @@ The lexer recognizes the following token types:
 - Literals (numbers, strings, identifiers)
 - Special tokens (EOF, whitespace, comments)
 
-### Usage Example
-
-```python
-from lexer import tokenize_spl, LexerError
-
-# Tokenize SPL code
-try:
-    source = """
-    main {
-        var { x }
-        x = 42;
-        print "Hello"
-    }
-    """
-    tokens = tokenize_spl(source)
-    for token in tokens:
-        print(f"{token.type.name}: {token.value}")
-except LexerError as e:
-    print(f"Error: {e}")
-```
 
 ## Testing
 
 ### Running Tests
 
 ```bash
-# Run lexer tests
-python3 tests/test_lexer.py
-
-# Run all tests (when parser tests are added)
-python3 -m unittest discover tests/
+# Run all tests
+python3 -m pytest -q
 ```
-
-### Test Coverage
-
-The lexer test suite includes:
-
-- ✅ Token type recognition (keywords, operators, delimiters)
-- ✅ Number parsing (valid/invalid formats)
-- ✅ String parsing (valid/invalid formats)
-- ✅ Identifier recognition
-- ✅ Whitespace and comment handling
-- ✅ Complex program tokenization
-- ✅ Error handling and reporting
-- ✅ Edge cases and boundary conditions
-
-**Test Results**: 23/23 tests passing
 
 ## Grammar Specification
 
@@ -239,20 +175,6 @@ BINOP ::= eq | > | or | and | plus | minus | mult | div
 - Constants: UPPER_CASE (e.g., MAX_STRING_LENGTH)
 - Private methods: Start with underscore (e.g., _parse_token)
 
-### Git Workflow
-
-1. Create feature branches for new components
-2. Write tests before implementation (TDD)
-3. Ensure all tests pass before merging
-4. Use descriptive commit messages
-
-### Team Responsibilities
-
-- **Lexer**: 🟨 In review (Token class, types, implementation, tests)
-- **Parser**: 🚧 Planned
-- **AST**: 🚧 Planned
-- **Code Generation**: 🚧 Planned
-
 ## Example Programs
 
 ### Simple Program
@@ -307,20 +229,4 @@ main {
 }
 ```
 
-## Resources
-
-- **Project Specification**: COS341 Semester Project 2025 Worksheet
-- **Grammar Reference**: SPL Context-Free Grammar (provided above)
-- **Python Documentation**: [docs.python.org](https://docs.python.org/)
-- **Testing Framework**: Python unittest module
-
-## Team Information
-
-**Course**: COS341 - Compiler Construction  
-**Project**: SPL Compiler Implementation  
-**Current Phase**: Compiler Frontend
-
 ---
-
-**Last Updated**: September 2, 2025  
-**Version**: 1.0 (Lexer Complete)
