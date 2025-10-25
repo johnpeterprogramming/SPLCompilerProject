@@ -1,0 +1,36 @@
+glob {
+  result
+}
+
+proc {
+  init() {
+    local { temp }
+    temp = 0
+  }
+}
+
+func {
+  add(x y) {
+    local { sum }
+    sum = ( x plus y );
+    return sum
+  }
+}
+
+main {
+  var { a b }
+    a = 10;
+    b = 20;
+    result = add(a b);
+    print result;
+    if ( result eq 30 ) {
+        print "Its30"
+    } else {
+        print "Itsnot30"
+    };
+    while ( a > 12 ) {
+        a = ( a plus 1 )
+    };
+    print a;
+    halt
+}

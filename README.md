@@ -4,20 +4,41 @@
 
 This is a compiler implementation for the **Students' Programming Language (SPL)**, developed as a group project for COS341. The compiler is designed to translate SPL source code into executable target code using a **modular architecture** with shared components.
 
+The project implements Project Type A, meaning it supports:
+- Lexical analysis
+- Parsing and AST construction
+- Semantic analysis (name scoping, type checking)
+- Executable BASIC code generation
+
+
+## Command-line Usage
+python main.py <input_spl_file.spl> <output_basic_file.txt>
+
+Example:
+python main.py input.spl out.txt
+
+Input: SPL source file (.spl)
+Output: Generated executable BASIC code (.txt)
+
+If any errors occur during lexing, parsing, or semantic analysis, the compiler prints a descriptive message and exits.
+
+
 ## Project Structure
 
 ```text
 SPLCompilerProject/
-├── spl_types.py          # Shared types, enums, and constants
-├── spl_utils.py          # Shared utility functions and classes
+├── spl_types.py          # Shared types, enums, constants, and error classes
+├── spl_utils.py          # Utility functions, error reporting, and configuration
 ├── lexer.py              # Lexical analyzer implementation
-├── parser.py             # Parser implementation (stub)
-├── abstract_syntax_tree.py # AST implementation (TODO)
-├── main.py               # Main compiler entry point
-├── example.spl           # Example SPL program for testing
+├── parser.py             # Parser implementation (constructs AST)
+├── semantic_analyzer.py  # Semantic checks (name scoping, type checking)
+├── code_generator.py     # Code generation (intermediate & BASIC)
+├── main.py               # Main compiler entry point (CLI)
+├── input.spl             # Example SPL program for testing
+├── out.txt               # Generated executable BASIC code (output)
 ├── tests/
-│   ├── test_lexer.py     # Comprehensive lexer tests
-│   └── test_parser.py    # Parser tests (TODO)
+│   ├── test_lexer.py     # Lexer unit tests
+│   └── test_parser.py    # Parser unit tests
 └── README.md             # This file
 ```
 
@@ -54,9 +75,22 @@ The compiler uses a **modular design** with shared components across all phases:
 
 - **SPLParser**: Parser class using TokenStream
 - **parse_spl()**: Convenience function for parsing
-- Ready for full implementation using shared utilities
+- Detects syntax errors and provides descriptive messages with line/column info.
+- Builds an Abstract Syntax Tree (AST) representing program structure, including blocks, expressions, and statements.
 
-## Current Implementation Status
+#### `semantic_analyzer.py` - Semantic Analysis
+-
+-
+-
+-
+
+#### `code_generator.py` - Code Generation
+-
+-
+-
+-
+
+
 
 ## SPL Language Features
 
@@ -116,6 +150,36 @@ The lexer recognizes the following token types:
 # Run all tests
 python3 -m pytest -q
 ```
+
+
+## Parser Implementation
+- Builds an AST for the entire SPL program.
+- Detects syntax errors, such as unmatched brackets, missing semicolons, or invalid expressions.
+- Prepares the AST for semantic analysis and code generation.
+
+## Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+py -m pytest tests/test_parser.py -v
+```
+
+## Semantic Analysis
+
+
+
+
+
+## Code Generation
+
+
+
+
+
+
+
 
 ## Grammar Specification
 
