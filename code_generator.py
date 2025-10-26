@@ -701,7 +701,7 @@ class CodeGenerator:
             line_rewritten = goto_re.sub(_subst, then_re.sub(_subst, line))
             numbered_lines.append(f"{line_no_for_index[i]} {line_rewritten}")
 
-        return "\n".join(numbered_lines)
+        return '#lang "qb"\n' + "\n".join(numbered_lines)
 
 
 def generate_intermediate_code(symbol_table: SymbolTable, ast: ProgramNode, output_file: str = "output.txt") -> str:
