@@ -23,6 +23,13 @@ class CodeGenerator:
         self.ast = ast
         self.temp_counter = 0
         self.label_counter = 0
+
+        # Function name -> FuncDefNode (for inlining)
+        self.func_map = {f.name: f for f in getattr(ast.funcs, "funcs", [])}
+        # Per-inlining renaming stack: [{original_name: unique_internal_name}]
+        self.rename_stack: list[dict[str, str]] = []
+        # Unique counter for inlined instances
+        self.inline_counter = 0
     
     def new_temp(self) -> str:
         """Generate a new temporary variable name"""
@@ -39,12 +46,15 @@ class CodeGenerator:
         Lookup a variable in the symbol table and return its internal name.
         Using the variable name as is.
         """
-        # Look up the variable in the symbol table
+        # If we are inside an inlined function instance, apply renaming first
+        for mapping in reversed(self.rename_stack):
+            if var_name in mapping:
+                return mapping[var_name]
+        # Otherwise, confirm variable exists in some scope (for debug) and return its name
         entries = self.symbol_table.lookup_by_name(var_name)
         if entries:
             return var_name
-        else:
-            raise CodeGenError(f"Variable '{var_name}' not found in symbol table", 0, 0)
+        raise CodeGenError(f"Variable '{var_name}' not found in symbol table", 0, 0)
     
     def generate(self) -> str:
         """
@@ -124,6 +134,11 @@ class CodeGenerator:
         if isinstance(assign.expr, CallNode):
             # Function call with return value
             call_code, result_temp = self.translate_call(assign.expr)
+            # Inline function if available; otherwise error (assignment expects a function)
+            if assign.expr.name in self.func_map:
+                call_code, result_temp = self.inline_function(assign.expr)
+            else:
+                raise CodeGenError(f"'{assign.expr.name}' is not a function (cannot assign CALL)", 0, 0)
             code = call_code + "\n" + f"{var_internal} = {result_temp}"
             return code
         elif isinstance(assign.expr, TermNode):
@@ -137,6 +152,69 @@ class CodeGenerator:
         else:
             raise CodeGenError(f"Unknown assignment expression type", 0, 0)
     
+
+    def inline_function(self, call: CallNode) -> Tuple[str, str]:
+        """
+        Inline a function call:
+          - evaluate arguments,
+          - assign them to fresh per-invocation parameter vars,
+          - translate the function body with renamed params/locals,
+          - evaluate the return atom and produce its temp.
+        Returns (generated_code, result_temp).
+        """
+        func = self.func_map.get(call.name)
+        if func is None:
+            raise CodeGenError(f"Function '{call.name}' not found for inlining", 0, 0)
+
+        # 1) Evaluate arguments to temps
+        arg_eval_lines: list[str] = []
+        arg_temps: list[str] = []
+        for arg_atom in call.args.args:
+            c, t = self.translate_atom(arg_atom)
+            if c:
+                arg_eval_lines.append(c)
+            arg_temps.append(t)
+
+        # 2) Build a fresh rename mapping for this inlined instance
+        self.inline_counter += 1
+        prefix = f"{func.name}_{self.inline_counter}"
+        mapping: dict[str, str] = {}
+        # Map parameters
+        formal_params = list(func.params.params)
+        for i, p in enumerate(formal_params):
+            mapping[p.name] = f"{prefix}_{p.name}"
+        # Map locals
+        for loc in func.body.locals.params:
+            mapping[loc.name] = f"{prefix}_{loc.name}"
+
+        # 3) Assign evaluated args into the fresh parameter variables
+        param_assign_lines: list[str] = []
+        for i, p in enumerate(formal_params):
+            src_temp = arg_temps[i] if i < len(arg_temps) else "0"
+            param_assign_lines.append(f"{mapping[p.name]} = {src_temp}")
+
+        # 4) Translate function body under this mapping
+        self.rename_stack.append(mapping)
+        try:
+            body_code = self.translate_algo(func.body.algo)
+            # 5) Evaluate the return atom under the same mapping
+            ret_code, ret_temp = self.translate_atom(func.return_atom)
+        finally:
+            self.rename_stack.pop()
+
+        # 6) Stitch code together
+        parts: list[str] = []
+        if arg_eval_lines:
+            parts.append("\n".join(arg_eval_lines))
+        if param_assign_lines:
+            parts.append("\n".join(param_assign_lines))
+        if body_code:
+            parts.append(body_code)
+        if ret_code:
+            parts.append(ret_code)
+
+        return ("\n".join(parts), ret_temp)
+
     def translate_call(self, call: CallNode) -> Tuple[str, str]:
         """
         Translate procedure/function call.
@@ -392,10 +470,10 @@ class CodeGenerator:
             REM labelExit
         """
         label_begin = self.new_label("LBegin")
-        label_exit = self.new_label("LExit")
-        
+
         if loop.kind == 'while':
             label_body = self.new_label("LBody")
+            label_exit = self.new_label("LExit")
             
             # Translate condition
             cond_code = self.translate_condition(loop.cond, label_body)
@@ -419,6 +497,8 @@ class CodeGenerator:
         elif loop.kind == 'do-until':
             # Translate body
             body_code = self.translate_algo(loop.body)
+
+            label_exit = self.new_label("LExit")
             
             # Translate condition
             cond_code = self.translate_condition(loop.cond, label_exit)
